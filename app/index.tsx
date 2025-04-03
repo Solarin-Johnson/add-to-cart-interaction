@@ -1,10 +1,11 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { PRODUCT, Product } from "@/constants/Product";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
 export default function Index() {
   return (
@@ -20,8 +21,9 @@ const ProductDetails = ({
   price,
   image,
   description,
-  options,
+  specs,
 }: Product) => {
+  const text = useThemeColor({}, "text");
   const formatedPrice = (price: number) => {
     const formatter = new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -30,44 +32,60 @@ const ProductDetails = ({
     return formatter.format(price);
   };
   return (
-    <SafeAreaView style={{ padding: 16 }}>
-      <View style={styles.imageContainer}>
-        <Image
-          source={image}
-          style={{ width: "100%", height: 200 }}
-          contentFit="contain"
-        />
-      </View>
-      <View style={styles.productDetails}>
-        <ThemedText type="title" style={{ fontSize: 28 }}>
-          {name}
-        </ThemedText>
-        {description && (
+    <ScrollView style={{ padding: 16 }} showsVerticalScrollIndicator={false}>
+      <SafeAreaView>
+        <View style={[styles.imageContainer, { backgroundColor: text + "05" }]}>
+          <Image
+            source={image}
+            style={{ width: "100%", height: 200 }}
+            contentFit="contain"
+          />
+        </View>
+        <View style={styles.productDetails}>
+          <ThemedText type="title">{name}</ThemedText>
+          {description && (
+            <ThemedText
+              type="defaultSemiBold"
+              style={{ fontSize: 15, opacity: 0.7 }}
+            >
+              {description}
+            </ThemedText>
+          )}
           <ThemedText
             type="defaultSemiBold"
-            style={{ fontSize: 15, opacity: 0.7, lineHeight: 20 }}
+            style={{ fontSize: 20, letterSpacing: -0.5, lineHeight: 30 }}
           >
-            {description}
+            {formatedPrice(price)}
           </ThemedText>
-        )}
-        <ThemedText type="defaultSemiBold" style={{ fontSize: 20 }}>
-          {formatedPrice(price)}
-        </ThemedText>
-        {options && Object.keys(options).length > 0 && (
-          <View style={{ marginTop: 8 }}>
-            <ThemedText style={{ fontWeight: "bold" }}>Options:</ThemedText>
-            {Object.entries(options).map(([key, value], index) => (
-              <View key={index} style={{ flexDirection: "row", marginLeft: 8 }}>
-                <ThemedText style={{ fontWeight: "bold" }}>
-                  • {key}:{" "}
+          <View style={[styles.seperator, { backgroundColor: text + "10" }]} />
+          {specs && Object.keys(specs).length > 0 && (
+            <View>
+              <View style={styles.specHeader}>
+                <ThemedText
+                  type="title"
+                  style={{ fontSize: 19, lineHeight: 19 }}
+                >
+                  Specifications
                 </ThemedText>
-                <ThemedText>{value}</ThemedText>
               </View>
-            ))}
-          </View>
-        )}
-      </View>
-    </SafeAreaView>
+              <View style={styles.specs}>
+                {Object.entries(specs).map(([key, value], index) => (
+                  <View
+                    key={index}
+                    style={[styles.spec, { backgroundColor: text + "05" }]}
+                  >
+                    <ThemedText>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                    </ThemedText>
+                    <ThemedText type="defaultSemiBold">{value}</ThemedText>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    </ScrollView>
   );
 };
 
@@ -83,18 +101,40 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
-    aspectRatio: 1.2,
+    aspectRatio: 1.1,
     marginTop: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#00000006",
+
     padding: 8,
     borderRadius: 16,
   },
   productDetails: {
     marginTop: 16,
-    padding: 8,
-    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
     flex: 1,
+  },
+  seperator: {
+    height: 1,
+    width: "100%",
+    marginVertical: 12,
+  },
+  specHeader: {
+    height: 30,
+    justifyContent: "center",
+  },
+  specs: {
+    // flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 8,
+  },
+  spec: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 5,
+    padding: 16,
+    borderRadius: 12,
   },
 });

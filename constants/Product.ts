@@ -3,7 +3,7 @@ export interface Product {
   name: string;
   price: number;
   description: string;
-  options: {
+  specs: {
     [key: string]: string | number | boolean;
   };
   image?: string;
@@ -18,10 +18,10 @@ export const PRODUCT: Product = {
   price: 3499.99,
   description:
     "Apple's revolutionary spatial computing device with advanced mixed reality capabilities",
-  options: {
+  specs: {
     storage: "256GB",
-    material: "premium metal alloy",
     connectivity: "Wi-Fi only",
+    material: "premium metal alloy",
   },
   image: require("../assets/images/apple-vision-pro.webp"),
   category: "wearables",

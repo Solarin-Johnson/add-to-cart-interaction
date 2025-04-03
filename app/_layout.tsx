@@ -21,9 +21,9 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    RobotoMedium: require("../assets/fonts/Roboto-Medium.ttf"),
-    RobotoSemiBold: require("../assets/fonts/Roboto-SemiBold.ttf"),
-    RobotoBold: require("../assets/fonts/Roboto-Bold.ttf"),
+    InterMedium: require("../assets/fonts/Inter-Medium.ttf"),
+    InterSemiBold: require("../assets/fonts/Inter-SemiBold.ttf"),
+    InterBold: require("../assets/fonts/Inter-Bold.ttf"),
   });
 
   useEffect(() => {
