@@ -11,6 +11,7 @@ import {
 import { useThemeColor } from "@/hooks/useThemeColor";
 import CartControls from "@/components/CartControls";
 import { LinearGradient } from "expo-linear-gradient";
+import { formatPrice } from "@/constants";
 
 export default function Index() {
   return (
@@ -33,13 +34,6 @@ const ProductDetails = ({
   const background = useThemeColor({}, "background");
   const { bottom } = useSafeAreaInsets();
 
-  const formatedPrice = (price: number) => {
-    const formatter = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    });
-    return formatter.format(price);
-  };
   return (
     <>
       <ScrollView
@@ -71,7 +65,7 @@ const ProductDetails = ({
               type="defaultSemiBold"
               style={{ fontSize: 20, letterSpacing: -0.5, lineHeight: 30 }}
             >
-              {formatedPrice(price)}
+              {formatPrice(price)}
             </ThemedText>
             <View
               style={[styles.seperator, { backgroundColor: text + "10" }]}
@@ -105,7 +99,7 @@ const ProductDetails = ({
         </SafeAreaView>
       </ScrollView>
       <LinearGradient
-        locations={[0, 0.25]}
+        locations={[0, 0.28]}
         colors={[background + "00", background] as const}
         style={[styles.actionBar, { paddingVertical: bottom }]}
       >
@@ -131,14 +125,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
     justifyContent: "center",
     alignItems: "center",
-
     padding: 8,
     borderRadius: 16,
   },
   productDetails: {
     marginTop: 16,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     gap: 8,
     flex: 1,
   },
@@ -169,7 +162,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     // height: 120,
-    padding: 16,
+    paddingHorizontal: 18,
     paddingTop: 32,
   },
 });

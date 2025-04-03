@@ -1,6 +1,16 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Pressable,
+} from "react-native";
+import { ThemedText } from "./ThemedText";
+import Feather from "@expo/vector-icons/Feather";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { CartIcon } from "./ui/Icons";
+import { formatPrice } from "@/constants";
 interface CartControlsProps {
   price: number;
   initialQuantity?: number;
@@ -15,42 +25,85 @@ const CartControls: React.FC<CartControlsProps> = ({
   maxQuantity = 99,
 }) => {
   const [quantity, setQuantity] = useState<number>(initialQuantity);
+  const [cartedQuantity, setCartedQuantity] = useState<number>(initialQuantity);
+  const text = useThemeColor({}, "text");
+  const background = useThemeColor({}, "background");
+
+  const isMaxQuantityReached = quantity >= maxQuantity;
+  const isMinQuantityReached = quantity <= 0;
 
   const handleIncrement = () => {
-    if (quantity < maxQuantity) {
-      const newQuantity = quantity + 1;
-      setQuantity(newQuantity);
-      onQuantityChange?.(newQuantity);
-    }
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
+    onQuantityChange?.(newQuantity);
   };
 
   const handleDecrement = () => {
-    if (quantity > 1) {
-      const newQuantity = quantity - 1;
-      setQuantity(newQuantity);
-      onQuantityChange?.(newQuantity);
-    }
+    const newQuantity = quantity - 1;
+    setQuantity(newQuantity);
+    onQuantityChange?.(newQuantity);
   };
+
+  useEffect(() => {
+    setCartedQuantity(quantity);
+  }, [quantity]);
 
   const totalPrice = (price * quantity).toFixed(2);
 
   return (
     <View style={styles.cartControls}>
-      <View style={styles.quantityControls}>
+      <View
+        style={[
+          styles.quantityControls,
+          {
+            backgroundColor: text + "10",
+          },
+        ]}
+      >
         <TouchableOpacity
           onPress={handleDecrement}
-          disabled={quantity <= 1}
-          style={[styles.button, quantity <= 1 && styles.disabledButton]}
+          disabled={isMinQuantityReached}
+          style={[styles.button, isMinQuantityReached && styles.disabledButton]}
         >
-          <Text style={styles.buttonText}>-</Text>
+          <ThemedText style={styles.buttonText}>
+            <Feather name="minus" size={21} />
+          </ThemedText>
         </TouchableOpacity>
-        <Text style={styles.quantityText}>{quantity}</Text>
-        <TouchableOpacity onPress={handleIncrement} style={styles.button}>
-          <Text style={styles.buttonText}>+</Text>
+        <View style={styles.quantityTextContainer}>
+          <ThemedText type="defaultSemiBold" style={styles.quantityText}>
+            {quantity}
+          </ThemedText>
+        </View>
+        <TouchableOpacity
+          onPress={handleIncrement}
+          disabled={isMaxQuantityReached}
+          style={[styles.button, isMaxQuantityReached && styles.disabledButton]}
+        >
+          <ThemedText style={styles.buttonText}>
+            <Feather name="plus" size={21} />
+          </ThemedText>
         </TouchableOpacity>
+
+        <Pressable style={[styles.overlay, { backgroundColor: text }]}>
+          <ThemedText
+            type="defaultSemiBold"
+            style={{ fontSize: 18, color: background }}
+          >
+            Add
+          </ThemedText>
+          <ThemedText
+            type="defaultSemiBold"
+            style={{ opacity: 0.6, fontSize: 17, color: background }}
+          >
+            {formatPrice(price)}
+          </ThemedText>
+        </Pressable>
       </View>
-      <View style={styles.priceDisplay}>
-        <Text style={styles.priceText}>Total: ${totalPrice}</Text>
+      <View style={styles.cart}>
+        <CartIcon size={25} color={text} />
+        <ThemedText type="defaultSemiBold" style={styles.total}>
+          {cartedQuantity}
+        </ThemedText>
       </View>
     </View>
   );
@@ -58,40 +111,70 @@ const CartControls: React.FC<CartControlsProps> = ({
 
 const styles = StyleSheet.create({
   cartControls: {
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
   },
   quantityControls: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
+    justifyContent: "space-evenly",
+    height: 58,
+    borderRadius: 50,
+    paddingHorizontal: 12,
+    flex: 1,
+    overflow: "hidden",
   },
   button: {
     width: 40,
     height: 40,
-    backgroundColor: "#3498db",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 5,
+    // paddingHorizontal: 16,
   },
   disabledButton: {
-    backgroundColor: "#b3d1e6",
+    opacity: 0.5,
   },
   buttonText: {
-    fontSize: 18,
-    color: "white",
-    fontWeight: "bold",
+    opacity: 0.7,
+  },
+  quantityTextContainer: {
+    width: 50,
+    alignItems: "center",
+    justifyContent: "center",
   },
   quantityText: {
-    fontSize: 18,
+    fontSize: 19,
     paddingHorizontal: 15,
   },
-  priceDisplay: {
+  cart: {
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+    width: 120,
+    opacity: 0.7,
   },
-  priceText: {
-    fontSize: 16,
-    fontWeight: "bold",
+  total: {
+    fontSize: 17,
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
 });
 
