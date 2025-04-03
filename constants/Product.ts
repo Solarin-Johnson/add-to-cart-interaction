@@ -25,5 +25,6 @@ export const PRODUCT: Product = {
   },
   image: require("../assets/images/apple-vision-pro.webp"),
   category: "wearables",
+  quantity: 12,
   inStock: true,
 };

@@ -4,8 +4,13 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { PRODUCT, Product } from "@/constants/Product";
 import { Image } from "expo-image";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import CartControls from "@/components/CartControls";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function Index() {
   return (
@@ -22,8 +27,12 @@ const ProductDetails = ({
   image,
   description,
   specs,
+  quantity,
 }: Product) => {
   const text = useThemeColor({}, "text");
+  const background = useThemeColor({}, "background");
+  const { bottom } = useSafeAreaInsets();
+
   const formatedPrice = (price: number) => {
     const formatter = new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -32,60 +41,77 @@ const ProductDetails = ({
     return formatter.format(price);
   };
   return (
-    <ScrollView style={{ padding: 16 }} showsVerticalScrollIndicator={false}>
-      <SafeAreaView>
-        <View style={[styles.imageContainer, { backgroundColor: text + "05" }]}>
-          <Image
-            source={image}
-            style={{ width: "100%", height: 200 }}
-            contentFit="contain"
-          />
-        </View>
-        <View style={styles.productDetails}>
-          <ThemedText type="title">{name}</ThemedText>
-          {description && (
+    <>
+      <ScrollView
+        style={{ padding: 16 }}
+        contentContainerStyle={{ paddingBottom: 116 + bottom }}
+        showsVerticalScrollIndicator={false}
+      >
+        <SafeAreaView>
+          <View
+            style={[styles.imageContainer, { backgroundColor: text + "05" }]}
+          >
+            <Image
+              source={image}
+              style={{ width: "100%", height: 200 }}
+              contentFit="contain"
+            />
+          </View>
+          <View style={styles.productDetails}>
+            <ThemedText type="title">{name}</ThemedText>
+            {description && (
+              <ThemedText
+                type="defaultSemiBold"
+                style={{ fontSize: 15, opacity: 0.7 }}
+              >
+                {description}
+              </ThemedText>
+            )}
             <ThemedText
               type="defaultSemiBold"
-              style={{ fontSize: 15, opacity: 0.7 }}
+              style={{ fontSize: 20, letterSpacing: -0.5, lineHeight: 30 }}
             >
-              {description}
+              {formatedPrice(price)}
             </ThemedText>
-          )}
-          <ThemedText
-            type="defaultSemiBold"
-            style={{ fontSize: 20, letterSpacing: -0.5, lineHeight: 30 }}
-          >
-            {formatedPrice(price)}
-          </ThemedText>
-          <View style={[styles.seperator, { backgroundColor: text + "10" }]} />
-          {specs && Object.keys(specs).length > 0 && (
-            <View>
-              <View style={styles.specHeader}>
-                <ThemedText
-                  type="title"
-                  style={{ fontSize: 19, lineHeight: 19 }}
-                >
-                  Specifications
-                </ThemedText>
-              </View>
-              <View style={styles.specs}>
-                {Object.entries(specs).map(([key, value], index) => (
-                  <View
-                    key={index}
-                    style={[styles.spec, { backgroundColor: text + "05" }]}
+            <View
+              style={[styles.seperator, { backgroundColor: text + "10" }]}
+            />
+            {specs && Object.keys(specs).length > 0 && (
+              <View>
+                <View style={styles.specHeader}>
+                  <ThemedText
+                    type="title"
+                    style={{ fontSize: 19, lineHeight: 19 }}
                   >
-                    <ThemedText>
-                      {key.charAt(0).toUpperCase() + key.slice(1)}
-                    </ThemedText>
-                    <ThemedText type="defaultSemiBold">{value}</ThemedText>
-                  </View>
-                ))}
+                    Specifications
+                  </ThemedText>
+                </View>
+                <View style={styles.specs}>
+                  {Object.entries(specs).map(([key, value], index) => (
+                    <View
+                      key={index}
+                      style={[styles.spec, { backgroundColor: text + "05" }]}
+                    >
+                      <ThemedText>
+                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                      </ThemedText>
+                      <ThemedText type="defaultSemiBold">{value}</ThemedText>
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          )}
-        </View>
-      </SafeAreaView>
-    </ScrollView>
+            )}
+          </View>
+        </SafeAreaView>
+      </ScrollView>
+      <LinearGradient
+        locations={[0, 0.25]}
+        colors={[background + "00", background] as const}
+        style={[styles.actionBar, { paddingVertical: bottom }]}
+      >
+        <CartControls price={price} maxQuantity={quantity} />
+      </LinearGradient>
+    </>
   );
 };
 
@@ -136,5 +162,14 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     padding: 16,
     borderRadius: 12,
+  },
+  actionBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    // height: 120,
+    padding: 16,
+    paddingTop: 32,
   },
 });
