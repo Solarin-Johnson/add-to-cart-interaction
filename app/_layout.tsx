@@ -20,7 +20,11 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({});
+  const [loaded] = useFonts({
+    RobotoMedium: require("../assets/fonts/Roboto-Medium.ttf"),
+    RobotoSemiBold: require("../assets/fonts/Roboto-SemiBold.ttf"),
+    RobotoBold: require("../assets/fonts/Roboto-Bold.ttf"),
+  });
 
   useEffect(() => {
     const setNavBar = async () => {
