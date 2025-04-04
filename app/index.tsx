@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, View } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { PRODUCT, Product } from "@/constants/Product";
@@ -121,6 +121,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
+    maxHeight: 460,
     aspectRatio: 1.1,
     marginTop: 16,
     justifyContent: "center",

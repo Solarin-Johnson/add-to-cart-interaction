@@ -1,5 +1,5 @@
 import React from "react";
-import { PixelRatio } from "react-native";
+import { PixelRatio, Platform } from "react-native";
 import Svg, { G, Path, Text } from "react-native-svg";
 export interface IconProps {
   color?: string;
@@ -8,6 +8,8 @@ export interface IconProps {
   text?: string | number;
   [key: string]: any;
 }
+
+const IS_WEB = Platform.OS === "web";
 
 export const CartIcon: React.FC<IconProps> = ({
   color = "currentColor",
@@ -35,11 +37,16 @@ export const CartIcon: React.FC<IconProps> = ({
         />
         <Text
           x="46%"
-          y="55%"
+          y={IS_WEB ? "62%" : "55%"}
           textAnchor="middle"
           alignmentBaseline="middle"
           fill={color}
-          fontSize={PixelRatio.getPixelSizeForLayoutSize(size * 0.02) + 6}
+          {...(IS_WEB && { fontFamily: "Helvetica" })}
+          fontSize={
+            IS_WEB
+              ? size * 0.2
+              : PixelRatio.getPixelSizeForLayoutSize(size * 0.02) + 6
+          }
           fontWeight={"600"}
         >
           {text}

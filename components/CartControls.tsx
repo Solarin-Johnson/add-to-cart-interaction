@@ -12,6 +12,9 @@ import {
   StyleSheet,
   Pressable,
   PixelRatio,
+  Platform,
+  LayoutChangeEvent,
+  useWindowDimensions,
 } from "react-native";
 import { ThemedText } from "./ThemedText";
 import Feather from "@expo/vector-icons/Feather";
@@ -32,6 +35,7 @@ import { Image } from "expo-image";
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const BALL_SIZE = 38;
+const IS_WEB = Platform.OS === "web";
 
 interface CartControlsProps {
   price: number;
@@ -124,15 +128,18 @@ const CartControls: React.FC<CartControlsProps> = ({
   image,
 }) => {
   const [quantity, setQuantity] = useState<number>(initialQuantity);
+  const { width: windowWidth } = useWindowDimensions();
   const [cartedQuantity, setCartedQuantity] = useState<number>(initialQuantity);
   const text = useThemeColor({}, "text");
   const background = useThemeColor({}, "background");
   const [originStart, setOriginStart] = useState<number>(0);
   const [originEnd, setOriginEnd] = useState<number>(0);
+  const [width, setWidth] = useState<number>(0);
   const controlsRef = useRef<View>(null);
   const cartRef = useRef<View>(null);
   const cartPulse = useSharedValue(1);
   const cartedSharedValue = useSharedValue(cartedQuantity);
+  const prevCartedQuantityRef = useRef(cartedQuantity);
 
   const isMaxQuantityReached = quantity >= maxQuantity;
   const isMinQuantityReached = quantity <= 0;
@@ -160,7 +167,7 @@ const CartControls: React.FC<CartControlsProps> = ({
         setOriginEnd(pageX + width / 2.8 - BALL_SIZE / 2);
       });
     }
-  }, [quantity]);
+  }, [quantity, windowWidth]);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -183,8 +190,6 @@ const CartControls: React.FC<CartControlsProps> = ({
       return () => {};
     }
   }, [quantity, cartedQuantity]);
-
-  const prevCartedQuantityRef = useRef(cartedQuantity);
 
   useEffect(() => {
     if (cartedQuantity > 0 && cartedQuantity > prevCartedQuantityRef.current) {
@@ -210,12 +215,22 @@ const CartControls: React.FC<CartControlsProps> = ({
     cartedSharedValue.value = cartedQuantity;
   }, [cartedQuantity, cartedSharedValue]);
 
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width: layoutWidth } = event.nativeEvent.layout;
+    setWidth(layoutWidth);
+  }, []);
+
   return (
-    <View style={styles.cartControls}>
+    <View style={styles.cartControls} onLayout={onLayout}>
       {quantity > 0 && (
         <>
           {Array.from({ length: quantity }).map((_, index) => (
-            <Ball key={index} {...{ originStart, originEnd }} image={image} />
+            <Ball
+              key={index}
+              {...{ originStart, originEnd }}
+              image={image}
+              originWidth={width}
+            />
           ))}
         </>
       )}
@@ -302,69 +317,76 @@ const CartControls: React.FC<CartControlsProps> = ({
 interface BallProps {
   originStart?: number;
   originEnd?: number;
+  originWidth?: number;
   image?: string;
   onFinish?: () => void;
 }
 
-const Ball = memo(({ originStart = 0, originEnd = 0, image }: BallProps) => {
-  const angle = useSharedValue(0);
-  const opacity = useSharedValue(1);
-
-  useAnimatedReaction(
-    () => angle.value,
-    (currentAngle) => {
-      if (currentAngle >= Math.PI * 0.8) {
-        opacity.value = withTiming(0, { duration: 250 });
+const Ball = memo(
+  ({ originStart = 0, originEnd = 0, originWidth = 0, image }: BallProps) => {
+    const { width } = useWindowDimensions();
+    const angle = useSharedValue(0);
+    const opacity = useSharedValue(1);
+    const webCord = IS_WEB ? (width - originWidth) / 2 - BALL_SIZE / 3 : 0;
+    useAnimatedReaction(
+      () => angle.value,
+      (currentAngle) => {
+        if (currentAngle >= Math.PI * 0.8) {
+          opacity.value = withTiming(0, { duration: 250 });
+        }
       }
-    }
-  );
+    );
 
-  useEffect(() => {
-    angle.value = withSpring(Math.PI, SPRING_CONFIG);
-  }, []);
+    useEffect(() => {
+      angle.value = withSpring(Math.PI, SPRING_CONFIG);
+    }, []);
 
-  const ballConstants = useMemo(() => {
-    const ballRadius = BALL_SIZE / 2;
-    const dx = originEnd - originStart;
-    const radiusX = (dx + BALL_SIZE) / 2;
-    const curvatureFactor = 1.5;
-    const radiusY = radiusX * curvatureFactor;
-    const centerX = originStart + dx / 2;
-    const baseBottom = 20;
-    const centerY = baseBottom + ballRadius;
-    return { ballRadius, radiusX, radiusY, centerX, centerY };
-  }, [originStart, originEnd, BALL_SIZE]);
+    const ballConstants = useMemo(() => {
+      const ballRadius = BALL_SIZE / 2;
+      const dx = originEnd - originStart;
+      const radiusX = (dx + BALL_SIZE) / 2;
+      const curvatureFactor = 1.5;
 
-  const animatedStyle = useAnimatedStyle(() => {
-    const { ballRadius, radiusX, radiusY, centerX, centerY } = ballConstants;
-    const left = centerX - radiusX * Math.cos(angle.value) - ballRadius;
-    const bottom = centerY + radiusY * Math.sin(angle.value) - ballRadius;
+      const radiusY = radiusX * curvatureFactor;
+      const centerX = originStart + dx / 2;
+      const baseBottom = 20;
+      const centerY = baseBottom + ballRadius;
+      return { ballRadius, radiusX, radiusY, centerX, centerY };
+    }, [originStart, originEnd, BALL_SIZE, webCord]);
 
-    return {
-      position: "absolute",
-      left,
-      bottom,
-      opacity: opacity.value,
-    };
-  });
+    const animatedStyle = useAnimatedStyle(() => {
+      const { ballRadius, radiusX, radiusY, centerX, centerY } = ballConstants;
+      const left =
+        centerX - radiusX * Math.cos(angle.value) - ballRadius - webCord;
+      const bottom = centerY + radiusY * Math.sin(angle.value) - ballRadius;
 
-  return (
-    <Animated.View style={[styles.balls, animatedStyle]}>
-      <Image
-        source={image}
-        style={{
-          width: BALL_SIZE,
-          height: BALL_SIZE,
-        }}
-        contentFit="contain"
-      />
-    </Animated.View>
-  );
-});
+      return {
+        position: "absolute",
+        left,
+        bottom,
+        opacity: opacity.value,
+      };
+    });
+
+    return (
+      <Animated.View style={[styles.balls, animatedStyle]}>
+        <Image
+          source={image}
+          style={{
+            width: BALL_SIZE,
+            height: BALL_SIZE,
+          }}
+          contentFit="contain"
+        />
+      </Animated.View>
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   cartControls: {
-    paddingVertical: 10,
+    paddingBottom: 10 + (IS_WEB ? 6 : 0),
+    paddingTop: IS_WEB ? 36 : 10,
     paddingHorizontal: PixelRatio.getPixelSizeForLayoutSize(4),
     flexDirection: "row",
     justifyContent: "space-between",
@@ -380,6 +402,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-evenly",
     height: 55,
+    paddingVertical: IS_WEB ? 4 : 0,
     borderRadius: 50,
     paddingHorizontal: 12,
     overflow: "hidden",
