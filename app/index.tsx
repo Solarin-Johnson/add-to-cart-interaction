@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { PRODUCT, Product } from "@/constants/Product";
@@ -145,7 +145,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   specs: {
-    // flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 8,
   },
@@ -161,8 +160,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    // height: 120,
     paddingHorizontal: 12,
-    paddingTop: 32,
+    paddingTop: 36,
   },
 });
