@@ -108,12 +108,12 @@ const CartControls: React.FC<CartControlsProps> = ({
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.measure((x, y, width, height, pageX, pageY) => {
-        setOriginStart(pageX);
+        setOriginStart(pageX + width / 2);
       });
     }
     if (cartRef.current) {
       cartRef.current.measure((x, y, width, height, pageX, pageY) => {
-        setOriginEnd(pageX - width / 2 - BALL_SIZE / 2 + 1);
+        setOriginEnd(pageX + 26 - BALL_SIZE / 2);
       });
     }
   }, [controlsRef, cartRef]);
@@ -205,23 +205,31 @@ interface BallProps {
   originEnd?: number;
 }
 
-const BALL_SIZE = 36;
+const BALL_SIZE = 35;
 
 const Ball = ({ originStart = 0, originEnd = 0 }: BallProps) => {
-  const radiusX = (originEnd - originStart + BALL_SIZE) / 2;
-  const radiusY = radiusX * 1.6;
-  const centerX = radiusX + BALL_SIZE * 2;
-  const centerY = 20;
+  const ballRadius = BALL_SIZE / 2;
 
-  const angle = useSharedValue(0); // in radians
+  const dx = originEnd - originStart;
+
+  const radiusX = (dx + BALL_SIZE) / 2;
+
+  const curvatureFactor = 1.7;
+  const radiusY = radiusX * curvatureFactor;
+
+  const centerX = originStart + dx / 2;
+  const baseBottom = 20;
+  const centerY = baseBottom + ballRadius;
+
+  const angle = useSharedValue(0);
   const opacity = useSharedValue(1);
 
   useAnimatedReaction(
     () => angle.value,
-    (val) => {
+    (currentAngle) => {
       "worklet";
-      if (val >= Math.PI * 0.8) {
-        opacity.value = withSpring(0, SPRING_CONFIG);
+      if (currentAngle >= Math.PI * 0.9) {
+        opacity.value = withTiming(0, { duration: 200 });
       }
     }
   );
@@ -232,10 +240,11 @@ const Ball = ({ originStart = 0, originEnd = 0 }: BallProps) => {
 
   const animatedStyle = useAnimatedStyle(() => {
     "worklet";
-    const left = centerX - radiusX * Math.cos(angle.value);
-    const bottom = centerY + radiusY * Math.sin(angle.value);
+    // Calculate left and bottom so the ball's center follows the arc.
+    const left = centerX - radiusX * Math.cos(angle.value) - ballRadius;
+    const bottom = centerY + radiusY * Math.sin(angle.value) - ballRadius;
     return {
-      position: "absolute" as const,
+      position: "absolute",
       left,
       bottom,
       opacity: opacity.value,
