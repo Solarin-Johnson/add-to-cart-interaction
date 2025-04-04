@@ -174,7 +174,7 @@ const CartControls: React.FC<CartControlsProps> = ({
 
       return () => {
         const elapsedTime = Date.now() - startTime;
-        if (elapsedTime < 300 && timeoutId) {
+        if (elapsedTime < 100 && timeoutId) {
           clearTimeout(timeoutId);
         }
       };
@@ -313,7 +313,6 @@ const Ball = memo(({ originStart = 0, originEnd = 0, image }: BallProps) => {
   useAnimatedReaction(
     () => angle.value,
     (currentAngle) => {
-      "worklet";
       if (currentAngle >= Math.PI * 0.8) {
         opacity.value = withTiming(0, { duration: 250 });
       }
@@ -337,7 +336,6 @@ const Ball = memo(({ originStart = 0, originEnd = 0, image }: BallProps) => {
   }, [originStart, originEnd, BALL_SIZE]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    "worklet";
     const { ballRadius, radiusX, radiusY, centerX, centerY } = ballConstants;
     const left = centerX - radiusX * Math.cos(angle.value) - ballRadius;
     const bottom = centerY + radiusY * Math.sin(angle.value) - ballRadius;
