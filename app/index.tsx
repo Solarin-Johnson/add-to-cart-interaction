@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { PRODUCT, Product } from "@/constants/Product";
@@ -35,7 +35,7 @@ const ProductDetails = ({
   const { bottom } = useSafeAreaInsets();
 
   return (
-    <>
+    <ThemedView style={{ flex: 1, overflow: "hidden" }}>
       <ScrollView
         style={{ padding: 16 }}
         contentContainerStyle={{ paddingBottom: 116 + bottom }}
@@ -105,7 +105,7 @@ const ProductDetails = ({
       >
         <CartControls price={price} maxQuantity={quantity} image={image} />
       </LinearGradient>
-    </>
+    </ThemedView>
   );
 };
 

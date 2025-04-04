@@ -14,6 +14,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Platform } from "react-native";
+import Head from "expo-router/head";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -52,6 +53,9 @@ export default function RootLayout() {
 
   return (
     <>
+      <Head>
+        <meta name="color-scheme" content="light dark" />
+      </Head>
       <SafeAreaProvider>
         <ThemeProvider
           value={colorScheme === "dark" ? DarkTheme : DefaultTheme}

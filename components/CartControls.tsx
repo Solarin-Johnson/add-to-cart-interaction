@@ -54,7 +54,7 @@ const PULSE_SPRING = {
   restDisplacementThreshold: 0.1,
 };
 
-function ButtonExit(values: any) {
+function ButtonExit() {
   "worklet";
 
   const animations = {
@@ -87,7 +87,7 @@ function ButtonExit(values: any) {
   };
 }
 
-function ButtonEnter(values: any) {
+function ButtonEnter() {
   "worklet";
 
   const animations = {
@@ -396,6 +396,7 @@ const styles = StyleSheet.create({
     maxWidth: IS_WEB ? 420 : 450,
     alignSelf: "center",
     position: "relative",
+    userSelect: "none",
   },
   quantityControls: {
     flexDirection: "row",
