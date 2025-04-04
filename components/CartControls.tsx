@@ -1,4 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -12,6 +19,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { CartIcon } from "./ui/Icons";
 import { formatPrice } from "@/constants";
 import Animated, {
+  runOnJS,
   useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
@@ -20,13 +28,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { ThemedView } from "./ThemedView";
+import { Image } from "expo-image";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const SPRING_CONFIG = {
-  damping: 15,
+  damping: 18,
   stiffness: 80,
-  mass: 1,
-  overshootClamping: true,
+  mass: 1.5,
+  overshootClamping: false,
   restSpeedThreshold: 0.1,
   restDisplacementThreshold: 0.1,
 };
@@ -36,6 +45,7 @@ interface CartControlsProps {
   initialQuantity?: number;
   maxQuantity?: number;
   onQuantityChange?: (quantity: number) => void;
+  image?: string;
 }
 
 function ButtonExit(values: any) {
@@ -47,7 +57,7 @@ function ButtonExit(values: any) {
         scale: withTiming(0, { duration: 300 }),
       },
       {
-        translateY: withTiming(-450, { duration: 500 }),
+        translateY: withTiming(-400, { duration: 500 }),
       },
     ],
     opacity: withDelay(200, withTiming(0, { duration: 0 })),
@@ -76,6 +86,7 @@ const CartControls: React.FC<CartControlsProps> = ({
   initialQuantity = 0,
   onQuantityChange,
   maxQuantity = 99,
+  image,
 }) => {
   const [quantity, setQuantity] = useState<number>(initialQuantity);
   const [cartedQuantity, setCartedQuantity] = useState<number>(initialQuantity);
@@ -89,21 +100,17 @@ const CartControls: React.FC<CartControlsProps> = ({
   const isMaxQuantityReached = quantity >= maxQuantity;
   const isMinQuantityReached = quantity <= 0;
 
-  const handleIncrement = () => {
+  const handleIncrement = useCallback(() => {
     const newQuantity = quantity + 1;
     setQuantity(newQuantity);
     onQuantityChange?.(newQuantity);
-  };
+  }, [quantity, onQuantityChange]);
 
-  const handleDecrement = () => {
+  const handleDecrement = useCallback(() => {
     const newQuantity = quantity - 1;
     setQuantity(newQuantity);
     onQuantityChange?.(newQuantity);
-  };
-
-  useEffect(() => {
-    setCartedQuantity(quantity);
-  }, [quantity]);
+  }, [quantity, onQuantityChange]);
 
   useEffect(() => {
     if (controlsRef.current) {
@@ -116,14 +123,24 @@ const CartControls: React.FC<CartControlsProps> = ({
         setOriginEnd(pageX + 26 - BALL_SIZE / 2);
       });
     }
-  }, [controlsRef, cartRef]);
+  }, [quantity]);
+
+  useEffect(() => {
+    if (quantity > cartedQuantity) {
+      setTimeout(() => {
+        setCartedQuantity(quantity);
+      }, 300);
+    } else {
+      setCartedQuantity(quantity);
+    }
+  }, [quantity]);
 
   return (
     <View style={styles.cartControls}>
       {quantity > 0 && (
         <>
           {Array.from({ length: quantity }).map((_, index) => (
-            <Ball key={index} {...{ originStart, originEnd }} />
+            <Ball key={index} {...{ originStart, originEnd }} image={image} />
           ))}
         </>
       )}
@@ -191,7 +208,9 @@ const CartControls: React.FC<CartControlsProps> = ({
         </View>
       </ThemedView>
       <View style={styles.cart} ref={cartRef}>
-        <CartIcon size={28} color={text} style={{ opacity: 0.8 }} />
+        <Animated.View>
+          <CartIcon size={30} color={text} style={{ opacity: 0.8 }} />
+        </Animated.View>
         <ThemedText type="defaultSemiBold" style={styles.total}>
           {cartedQuantity}
         </ThemedText>
@@ -203,33 +222,24 @@ const CartControls: React.FC<CartControlsProps> = ({
 interface BallProps {
   originStart?: number;
   originEnd?: number;
+  image?: string;
+  onFinish?: () => void;
 }
 
-const BALL_SIZE = 35;
+const BALL_SIZE = 38;
 
-const Ball = ({ originStart = 0, originEnd = 0 }: BallProps) => {
-  const ballRadius = BALL_SIZE / 2;
-
-  const dx = originEnd - originStart;
-
-  const radiusX = (dx + BALL_SIZE) / 2;
-
-  const curvatureFactor = 1.7;
-  const radiusY = radiusX * curvatureFactor;
-
-  const centerX = originStart + dx / 2;
-  const baseBottom = 20;
-  const centerY = baseBottom + ballRadius;
-
+const Ball = memo(({ originStart = 0, originEnd = 0, image }: BallProps) => {
   const angle = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const bg = useThemeColor({}, "background");
 
   useAnimatedReaction(
     () => angle.value,
     (currentAngle) => {
       "worklet";
-      if (currentAngle >= Math.PI * 0.9) {
-        opacity.value = withTiming(0, { duration: 200 });
+      if (currentAngle >= Math.PI * 0.8) {
+        opacity.value = withTiming(0, { duration: 400 });
+        // if (onFinish) runOnJS(onFinish)();
       }
     }
   );
@@ -238,11 +248,24 @@ const Ball = ({ originStart = 0, originEnd = 0 }: BallProps) => {
     angle.value = withSpring(Math.PI, SPRING_CONFIG);
   }, []);
 
+  const ballConstants = useMemo(() => {
+    const ballRadius = BALL_SIZE / 2;
+    const dx = originEnd - originStart;
+    const radiusX = (dx + BALL_SIZE) / 2;
+    const curvatureFactor = 1.5;
+    const radiusY = radiusX * curvatureFactor;
+    const centerX = originStart + dx / 2;
+    const baseBottom = 20;
+    const centerY = baseBottom + ballRadius;
+    return { ballRadius, radiusX, radiusY, centerX, centerY };
+  }, [originStart, originEnd, BALL_SIZE]);
+
   const animatedStyle = useAnimatedStyle(() => {
     "worklet";
-    // Calculate left and bottom so the ball's center follows the arc.
+    const { ballRadius, radiusX, radiusY, centerX, centerY } = ballConstants;
     const left = centerX - radiusX * Math.cos(angle.value) - ballRadius;
     const bottom = centerY + radiusY * Math.sin(angle.value) - ballRadius;
+
     return {
       position: "absolute",
       left,
@@ -251,8 +274,27 @@ const Ball = ({ originStart = 0, originEnd = 0 }: BallProps) => {
     };
   });
 
-  return <Animated.View style={[styles.balls, {}, animatedStyle]} />;
-};
+  return (
+    <Animated.View
+      style={[
+        styles.balls,
+        {
+          //   backgroundColor: bg,
+        },
+        animatedStyle,
+      ]}
+    >
+      <Image
+        source={image}
+        style={{
+          width: BALL_SIZE,
+          height: BALL_SIZE,
+        }}
+        contentFit="contain"
+      />
+    </Animated.View>
+  );
+});
 
 const styles = StyleSheet.create({
   cartControls: {
@@ -271,7 +313,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-evenly",
-    height: 52,
+    height: 54,
     borderRadius: 50,
     paddingHorizontal: 12,
     overflow: "hidden",
@@ -304,12 +346,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
-    gap: 10,
+    gap: 8,
     width: 110,
     opacity: 0.7,
   },
   total: {
-    fontSize: 18,
+    fontSize: 19,
     width: 21,
     textAlign: "center",
   },
@@ -328,11 +370,17 @@ const styles = StyleSheet.create({
 
   balls: {
     position: "absolute",
+    backgroundColor: "#ffffff",
     width: BALL_SIZE,
     height: BALL_SIZE,
     borderRadius: 8,
-    backgroundColor: "red",
-    // opacity: 0.2,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
 

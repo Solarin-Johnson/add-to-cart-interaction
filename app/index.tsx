@@ -103,7 +103,7 @@ const ProductDetails = ({
         colors={[background + "00", background] as const}
         style={[styles.actionBar, { paddingVertical: bottom }]}
       >
-        <CartControls price={price} maxQuantity={quantity} />
+        <CartControls price={price} maxQuantity={quantity} image={image} />
       </LinearGradient>
     </>
   );
