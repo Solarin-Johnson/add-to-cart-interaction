@@ -47,7 +47,7 @@ const ProductDetails = ({
           >
             <Image
               source={image}
-              style={{ width: "100%", height: 200 }}
+              style={{ width: "100%", height: 300 }}
               contentFit="contain"
             />
           </View>
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: "100%",
-    maxHeight: 460,
+    maxHeight: 480,
     aspectRatio: 1.1,
     marginTop: 16,
     justifyContent: "center",

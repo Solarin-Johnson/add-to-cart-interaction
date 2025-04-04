@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: PixelRatio.getPixelSizeForLayoutSize(3),
     width: "100%",
-    maxWidth: 480,
+    maxWidth: IS_WEB ? 420 : 450,
     alignSelf: "center",
     position: "relative",
   },
