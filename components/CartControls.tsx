@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,11 +11,64 @@ import Feather from "@expo/vector-icons/Feather";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { CartIcon } from "./ui/Icons";
 import { formatPrice } from "@/constants";
+import Animated, {
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+import { ThemedView } from "./ThemedView";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const SPRING_CONFIG = {
+  damping: 15,
+  stiffness: 80,
+  mass: 1,
+  overshootClamping: true,
+  restSpeedThreshold: 0.1,
+  restDisplacementThreshold: 0.1,
+};
+
 interface CartControlsProps {
   price: number;
   initialQuantity?: number;
   maxQuantity?: number;
   onQuantityChange?: (quantity: number) => void;
+}
+
+function ButtonExit(values: any) {
+  "worklet";
+
+  const animations = {
+    transform: [
+      {
+        scale: withTiming(0, { duration: 300 }),
+      },
+      {
+        translateY: withTiming(-450, { duration: 500 }),
+      },
+    ],
+    opacity: withDelay(200, withTiming(0, { duration: 0 })),
+  };
+
+  const initialValues = {
+    transform: [
+      {
+        scale: 1,
+      },
+      {
+        translateY: 0,
+      },
+    ],
+    opacity: 1,
+  };
+
+  return {
+    initialValues,
+    animations,
+  };
 }
 
 const CartControls: React.FC<CartControlsProps> = ({
@@ -28,6 +81,10 @@ const CartControls: React.FC<CartControlsProps> = ({
   const [cartedQuantity, setCartedQuantity] = useState<number>(initialQuantity);
   const text = useThemeColor({}, "text");
   const background = useThemeColor({}, "background");
+  const [originStart, setOriginStart] = useState<number>(0);
+  const [originEnd, setOriginEnd] = useState<number>(0);
+  const controlsRef = useRef<View>(null);
+  const cartRef = useRef<View>(null);
 
   const isMaxQuantityReached = quantity >= maxQuantity;
   const isMinQuantityReached = quantity <= 0;
@@ -48,65 +105,144 @@ const CartControls: React.FC<CartControlsProps> = ({
     setCartedQuantity(quantity);
   }, [quantity]);
 
-  const totalPrice = (price * quantity).toFixed(2);
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setOriginStart(pageX);
+      });
+    }
+    if (cartRef.current) {
+      cartRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setOriginEnd(pageX - width / 2 - BALL_SIZE / 2 + 1);
+      });
+    }
+  }, [controlsRef, cartRef]);
 
   return (
     <View style={styles.cartControls}>
-      <View
-        style={[
-          styles.quantityControls,
-          {
-            backgroundColor: text + "10",
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={handleDecrement}
-          disabled={isMinQuantityReached}
-          style={[styles.button, isMinQuantityReached && styles.disabledButton]}
-        >
-          <ThemedText style={styles.buttonText}>
-            <Feather name="minus" size={21} />
-          </ThemedText>
-        </TouchableOpacity>
-        <View style={styles.quantityTextContainer}>
-          <ThemedText type="defaultSemiBold" style={styles.quantityText}>
-            {quantity}
-          </ThemedText>
-        </View>
-        <TouchableOpacity
-          onPress={handleIncrement}
-          disabled={isMaxQuantityReached}
-          style={[styles.button, isMaxQuantityReached && styles.disabledButton]}
-        >
-          <ThemedText style={styles.buttonText}>
-            <Feather name="plus" size={21} />
-          </ThemedText>
-        </TouchableOpacity>
+      {quantity > 0 && (
+        <>
+          {Array.from({ length: quantity }).map((_, index) => (
+            <Ball key={index} {...{ originStart, originEnd }} />
+          ))}
+        </>
+      )}
 
-        <Pressable style={[styles.overlay, { backgroundColor: text }]}>
-          <ThemedText
-            type="defaultSemiBold"
-            style={{ fontSize: 18, color: background }}
+      <ThemedView style={{ flex: 1 }}>
+        <View
+          ref={controlsRef}
+          style={[
+            styles.quantityControls,
+            {
+              backgroundColor: text + "10",
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={handleDecrement}
+            disabled={isMinQuantityReached}
+            style={[
+              styles.button,
+              isMinQuantityReached && styles.disabledButton,
+            ]}
           >
-            Add
-          </ThemedText>
-          <ThemedText
-            type="defaultSemiBold"
-            style={{ opacity: 0.6, fontSize: 17, color: background }}
+            <ThemedText style={styles.buttonText}>
+              <Feather name="minus" size={21} />
+            </ThemedText>
+          </TouchableOpacity>
+          <View style={styles.quantityTextContainer}>
+            <ThemedText type="defaultSemiBold" style={styles.quantityText}>
+              {quantity}
+            </ThemedText>
+          </View>
+          <TouchableOpacity
+            onPress={handleIncrement}
+            disabled={isMaxQuantityReached}
+            style={[
+              styles.button,
+              isMaxQuantityReached && styles.disabledButton,
+            ]}
           >
-            {formatPrice(price)}
-          </ThemedText>
-        </Pressable>
-      </View>
-      <View style={styles.cart}>
-        <CartIcon size={25} color={text} />
+            <ThemedText style={styles.buttonText}>
+              <Feather name="plus" size={21} />
+            </ThemedText>
+          </TouchableOpacity>
+
+          {quantity === 0 && (
+            <AnimatedPressable
+              style={[styles.overlay, { backgroundColor: text }]}
+              onPress={handleIncrement}
+              exiting={ButtonExit}
+            >
+              <ThemedText
+                type="defaultSemiBold"
+                style={{ fontSize: 17, color: background }}
+              >
+                Add
+              </ThemedText>
+              <ThemedText
+                type="defaultSemiBold"
+                style={{ opacity: 0.6, fontSize: 16, color: background }}
+              >
+                {formatPrice(price)}
+              </ThemedText>
+            </AnimatedPressable>
+          )}
+        </View>
+      </ThemedView>
+      <View style={styles.cart} ref={cartRef}>
+        <CartIcon size={28} color={text} style={{ opacity: 0.8 }} />
         <ThemedText type="defaultSemiBold" style={styles.total}>
           {cartedQuantity}
         </ThemedText>
       </View>
     </View>
   );
+};
+
+interface BallProps {
+  originStart?: number;
+  originEnd?: number;
+}
+
+const BALL_SIZE = 36;
+
+const Ball = ({ originStart = 0, originEnd = 0 }: BallProps) => {
+  const radiusX = (originEnd - originStart + BALL_SIZE) / 2;
+  const radiusY = radiusX * 1.6;
+  const centerX = radiusX + BALL_SIZE * 2;
+  const centerY = 20;
+
+  const angle = useSharedValue(0); // in radians
+  const opacity = useSharedValue(1);
+
+  useAnimatedReaction(
+    () => angle.value,
+    (val) => {
+      "worklet";
+      if (val >= Math.PI * 0.8) {
+        opacity.value = withSpring(0, SPRING_CONFIG);
+      }
+    }
+  );
+
+  useEffect(() => {
+    angle.value = withSpring(Math.PI, SPRING_CONFIG);
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    "worklet";
+    const left = centerX - radiusX * Math.cos(angle.value);
+    const bottom = centerY + radiusY * Math.sin(angle.value);
+    return {
+      position: "absolute" as const,
+      left,
+      bottom,
+      opacity: opacity.value,
+    };
+  });
+
+  return <Animated.View style={[styles.balls, {}, animatedStyle]} />;
 };
 
 const styles = StyleSheet.create({
@@ -116,20 +252,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 10,
+    // gap: 10,
     width: "100%",
     maxWidth: 480,
     alignSelf: "center",
+    position: "relative",
   },
   quantityControls: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-evenly",
-    height: 58,
+    height: 52,
     borderRadius: 50,
     paddingHorizontal: 12,
-    flex: 1,
     overflow: "hidden",
+    flex: 1,
   },
   button: {
     width: 40,
@@ -159,11 +296,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: 10,
-    width: 120,
+    width: 110,
     opacity: 0.7,
   },
   total: {
-    fontSize: 17,
+    fontSize: 18,
+    width: 21,
+    textAlign: "center",
   },
   overlay: {
     position: "absolute",
@@ -175,6 +314,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    borderRadius: 50,
+  },
+
+  balls: {
+    position: "absolute",
+    width: BALL_SIZE,
+    height: BALL_SIZE,
+    borderRadius: 8,
+    backgroundColor: "red",
+    // opacity: 0.2,
   },
 });
 

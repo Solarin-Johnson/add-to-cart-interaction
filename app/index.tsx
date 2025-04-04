@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   productDetails: {
     marginTop: 16,
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     gap: 8,
     flex: 1,
   },
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     // height: 120,
-    paddingHorizontal: 18,
+    paddingHorizontal: 12,
     paddingTop: 32,
   },
 });
